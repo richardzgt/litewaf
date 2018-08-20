@@ -34,11 +34,11 @@ nginx.conf 配置
     命中一次cc攻击后,拉入black_ip_in_cache,缓存600s[config_black_ip_cache]
 
 参数rulematch
+
     rulematch(unescape(ARGS_DATA),rule,"jo") 修改
     为 rulematch(unescape(ARGS_DATA),rule,"joi")
     ----------------------------------
     i   大小写不敏感模式.
-
     防止参数攻击(select注入) 绕过waf:
     http://abc.com?app="sEleCt * fRom dual" 
     匹配模式不区分大小写
