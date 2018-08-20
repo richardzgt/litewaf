@@ -1,20 +1,36 @@
-############
-nginx 软waf
+###########################
+源项目为 freewaf 我只是做些许更改
 
+###########################
+nginx.conf 配置
+
+    # lua_waf
+    lua_shared_dict limit 50m;
+    lua_shared_dict blackip 50m;
+    lua_package_path "/usr/local/nginx/conf/waf/?.lua";
+    init_by_lua_file  /usr/local/nginx/conf/waf/init.lua; 
+    access_by_lua_file /usr/local/nginx/conf/waf/access.lua;
+
+###########################
+更新日志:
 增加了whiteip cdip的功能,用以匹配ip段
+
     121.29.53.0/24
     120.55.146.0/24
 
 增加config_set_ip_addr参数,用以指定获取源地址的方式:X_Forwarded_For X_real_ip[header] or ngx.var.remote_addr
+
     config_set_ip_addr = "X_Forwarded_For"
 
 增加cc.rule -- 针对不同域名
+
     .*.abc.com|1/60
     oa.abc.com|60/60
     默认规则在config.lua里面配置[config_cc_rate]
 
 
 增加black_ip_in_cache功能
+
     命中一次cc攻击后,拉入black_ip_in_cache,缓存600s[config_black_ip_cache]
 
 参数rulematch
