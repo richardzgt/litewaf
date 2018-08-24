@@ -38,7 +38,9 @@ function get_rule(rulefilename)
     end
     RULE_TABLE = {}
     for line in RULE_FILE:lines() do
-        table.insert(RULE_TABLE,line)
+      if line ~= nil and line ~= "" then
+          table.insert(RULE_TABLE,line)
+      end
     end
     RULE_FILE:close()
     return(RULE_TABLE)
@@ -65,15 +67,15 @@ function log_record(method,url,data,ruletag)
                  rule_tag = ruletag,  
               }
     local LOG_LINE = cjson.encode(log_json_obj)
-	  --local LOG_NAME = LOG_PATH..'/'..ngx.today().."_waf.log"
-	  local LOG_NAME = LOG_PATH..'/'.."waf.log"
-	  local file = io.open(LOG_NAME,"a")
-	  if file == nil then
-	     return
-	  end
+    --local LOG_NAME = LOG_PATH..'/'..ngx.today().."_waf.log"
+    local LOG_NAME = LOG_PATH..'/'.."waf.log"
+    local file = io.open(LOG_NAME,"a")
+    if file == nil then
+       return
+    end
     file:write(LOG_LINE.."\n")
-	  file:flush()
-	  file:close()
+    file:flush()
+    file:close()
 end
 
 --WAF return

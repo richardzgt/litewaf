@@ -55,11 +55,9 @@ function black_ip_check()
         if IP_BLACK_RULE ~= nil then
             for _,rule in pairs(IP_BLACK_RULE) do
                 if rule ~= "" and rulematch(BLACK_IP,rule,"jo") then
-                    if config_waf_enable == "on" then
-                        log_record('BlackList_IP',ngx.var.request_uri,"_","_")
-                        ngx.exit(403)
-                        return true
-                    end
+                    log_record('BlackList_IP',ngx.var.request_uri,"_","_")
+                    ngx.exit(403)
+                    return true
                 end
             end
         end
@@ -81,14 +79,14 @@ function white_url_check()
     end
 end
 
-function get_cc_v(SERVER_NAME,CC_TOKEN)
+function get_cc_v(SERVER_NAME)
     local CC_RULES = get_rule('cc.rule')   
-    local CCcount=tonumber(string.match(config_cc_rate,'(.*)/'))
-    local CCseconds=tonumber(string.match(config_cc_rate,'/(.*)'))
+    local CCcount = tonumber(string.match(config_cc_rate,'(.*)/'))
+    local CCseconds = tonumber(string.match(config_cc_rate,'/(.*)'))
     if CC_RULES ~= nil then
         for _,rule in pairs(CC_RULES) do
-            server_name=string.match(rule,'(.*)|.*')
-            if rule ~= "" and  rulematch(SERVER_NAME,server_name,"jo") then
+            server_name, err=string.match(rule,'(.*)|.*')
+            if server_name ~= nil and  rulematch(SERVER_NAME,server_name,"jo") then
                 CCcount=string.match(rule,'.*|(.*)/')
                 CCseconds=string.match(rule,'.*|.*/(.*)')
                 break
@@ -107,20 +105,16 @@ function cc_attack_check()
         local CC_TOKEN = CLIENT_IP..SERVER_NAME..ATTACK_URI
         local limit = ngx.shared.limit
         local blackip = ngx.shared.blackip
-        -- CCcount=tonumber(string.match(config_cc_rate,'(.*)/'))
-        -- CCseconds=tonumber(string.match(config_cc_rate,'/(.*)'))
         local req,_ = limit:get(CC_TOKEN)
-        CC_V = get_cc_v(SERVER_NAME,CC_TOKEN)
+        CC_V = get_cc_v(SERVER_NAME)
         CCcount=tonumber(string.match(CC_V,'(.*)/'))
         CCseconds=tonumber(string.match(CC_V,'/(.*)'))
         blackip_seconds=tonumber(config_black_ip_cache)
         if req then
             if req > CCcount then
-                log_record('CC_Attack',ngx.var.request_uri,"-","-")
-        		if config_waf_enable == "on" then
-                    blackip:add(CLIENT_IP,1,blackip_seconds)
-                    ngx.exit(403)
-        		end
+                log_record('CC_Attack',ATTACK_URI,"-","-")
+                blackip:add(CLIENT_IP,1,blackip_seconds)
+                ngx.exit(403)
             else
                 limit:incr(CC_TOKEN,1)
             end
@@ -142,10 +136,8 @@ function cookie_attack_check()
             for _,rule in pairs(COOKIE_RULES) do
                 if rule ~="" and rulematch(USER_COOKIE,rule,"jo") then
                     log_record('Deny_Cookie',ngx.var.request_uri,"-",rule)
-                    if config_waf_enable == "on" then
-                        waf_output()
-                        return true
-                    end
+                    waf_output()
+                    return true
                 end
              end
 	 end
@@ -161,10 +153,8 @@ function url_attack_check()
         for _,rule in pairs(URL_RULES) do
             if rule ~="" and rulematch(REQ_URI,rule,"jo") then
                 log_record('Deny_URL',REQ_URI,"-",rule)
-                if config_waf_enable == "on" then
-                    waf_output()
-                    return true
-                end
+                waf_output()
+                return true
             end
         end
     end
@@ -185,10 +175,8 @@ function url_args_attack_check()
                 end
                 if ARGS_DATA and type(ARGS_DATA) ~= "boolean" and rule ~="" and rulematch(unescape(ARGS_DATA),rule,"joi") then
                     log_record('Deny_URL_Args',ngx.var.request_uri,"-",rule)
-                    if config_waf_enable == "on" then
-                        waf_output()
-                        return true
-                    end
+                    waf_output()
+                    return true
                 end
             end
         end
@@ -204,10 +192,8 @@ function user_agent_attack_check()
             for _,rule in pairs(USER_AGENT_RULES) do
                 if rule ~="" and rulematch(USER_AGENT,rule,"jo") then
                     log_record('Deny_USER_AGENT',ngx.var.request_uri,"-",rule)
-                    if config_waf_enable == "on" then
-		        waf_output()
-                        return true
-                    end
+                    waf_output()
+                    return true
                 end
             end
         end
@@ -217,12 +203,43 @@ end
 
 --deny post
 function post_attack_check()
-    if config_post_check == "on" then
+    if config_post_check == "on" and ngx.var.request_method == "POST" then
         local POST_RULES = get_rule('post.rule')
-        for _,rule in pairs(ARGS_RULES) do
-            local POST_ARGS = ngx.req.get_post_args()
+        ngx.req.read_body()
+        local POST_ARGS,err = ngx.req.get_post_args()
+        for _,rule in pairs(POST_RULES) do
+            if POST_ARGS ~= nil then
+                for key, val in pairs(POST_ARGS) do
+                    if type(val) == 'table' then
+                        local f_val = {}
+                        for _,item in pairs(val) do
+                            if type(item) ~= "boolean" then 
+                                table.insert(f_val,item)
+                            end
+                        end 
+                        ARGS_DATA = table.concat(f_val, " ")
+                    else
+                        ARGS_DATA = val
+                    end
+                    if ARGS_DATA and type(ARGS_DATA) ~= "boolean" then 
+                        -- filter post args
+                        if rulematch(unescape(ARGS_DATA),rule,"joi") then
+                            log_record('Deny_Post_Args',ngx.var.request_uri,"POST",rule)
+                            waf_output()
+                            return true
+                        end 
+
+                        -- filter post args key=var like password=123456 
+                        KV_ARGS = key.."="..ARGS_DATA
+                        if rulematch(unescape(KV_ARGS),rule,"joi")  then
+                            log_record('Deny_Post_KV',ngx.var.request_uri,"POST",rule)
+                            waf_output()
+                            return true
+                        end
+                    end
+                end
+            end
         end
-        return true
     end
     return false
 end 

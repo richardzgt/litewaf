@@ -7,13 +7,15 @@ config_log_dir = "/usr/local/nginx/logs"
 --rule setting
 config_rule_dir = "/usr/local/nginx/conf/waf/rule-config"
 --set ip addr from: X_Forwarded_For X_real_ip[header] or ngx.var.remote_addr 
-config_set_ip_addr = "X_Forwarded_For"
+config_set_ip_addr = "X_real_ip"
 --enable/disable white url
 config_white_url_check = "on"
 --enable/disable white ip
 config_white_ip_check = "on"
 --enable/disable block ip
 config_black_ip_check = "on"
+--black ip in cache time of xxx seconds
+config_black_ip_cache = "600"
 --enable/disable url filtering
 config_url_check = "on"
 --enalbe/disable url args filtering
@@ -40,7 +42,7 @@ config_output_html=[[
 <title>网站防火墙</title>
 </head>
 <body>
-<h1 align="center"> 欢迎白帽子进行授权安全测试，安全漏洞请联系QQ：1111111。
+<h1 align="center"> 网站waf防火墙已拦截 
 </body>
 </html>
 ]]
