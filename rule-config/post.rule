@@ -1,4 +1,4 @@
-\.\./
+password=123456$
 select.+(from|limit)
 (?:(union(.*?)select))
 having|rongjitest

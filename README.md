@@ -24,7 +24,7 @@ nginx.conf 配置
 
 增加cc.rule -- 针对不同域名
 
-    .*.abc.com|1/60
+    .*.abc.com|1/60   //匹配所有子域名
     oa.abc.com|60/60
     默认规则在config.lua里面配置[config_cc_rate]
 
@@ -42,3 +42,22 @@ nginx.conf 配置
     防止参数攻击(select注入) 绕过waf:
     http://abc.com?app="sEleCt * fRom dual" 
     匹配模式不区分大小写
+
+增加post_attack_check防止利用简单密码爆破,或者利用post参数列表插入非法参数
+
+    测试方法:
+         curl -H "Host:www.abc.com" -X POST -d "password=123456" http://www.abc.com/6666666666
+         curl -H "Host:yum.ops.net"  -X POST -d "hj=select * FroM *"  http://127.0.0.1:8088/script/install-dev.sh
+
+        <html>
+        <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Content-Language" content="zh-cn" />
+        <title>网站防火墙</title>
+        </head>
+        <body>
+        <h1 align="center"> 网站waf防火墙已拦截 </h1> 
+        </body>
+        </html
+
+
