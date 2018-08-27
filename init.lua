@@ -102,6 +102,7 @@ function cc_attack_check()
         local ATTACK_URI=ngx.var.uri
         local SERVER_NAME = ngx.var.http_host
         local CLIENT_IP = get_client_ip()
+        if SERVER_NAME == nil: SERVER_NAME="no_serverName"
         local CC_TOKEN = CLIENT_IP..SERVER_NAME..ATTACK_URI
         local limit = ngx.shared.limit
         local blackip = ngx.shared.blackip
