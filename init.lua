@@ -102,7 +102,9 @@ function cc_attack_check()
         local ATTACK_URI=ngx.var.uri
         local SERVER_NAME = ngx.var.http_host
         local CLIENT_IP = get_client_ip()
-        if SERVER_NAME == nil: SERVER_NAME="no_serverName"
+        if SERVER_NAME == nil then 
+            SERVER_NAME="no_serverName" 
+        end
         local CC_TOKEN = CLIENT_IP..SERVER_NAME..ATTACK_URI
         local limit = ngx.shared.limit
         local blackip = ngx.shared.blackip
@@ -113,7 +115,7 @@ function cc_attack_check()
         blackip_seconds=tonumber(config_black_ip_cache)
         if req then
             if req > CCcount then
-                log_record('CC_Attack',ATTACK_URI,"-","-")
+                log_record('CC_Attack',ATTACK_URI,CC_TOKEN,"-")
                 blackip:add(CLIENT_IP,1,blackip_seconds)
                 ngx.exit(403)
             else
